@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RC League</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+    <img id="bg" src="{{ url_for('video_feed') }}" />
+    <script>
+      var prevHoriz = 0;
+      var prevVert = 0;
+
+      var up = 0;
+      var down = 0;
+      var left = 0;
+      var right = 0;
+
+      function post(route, value) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/' + route, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send('value=' + value);
+      }
+
+      function handleInput() {
+        var horizontal = right - left;
+        var vertical = up - down;
+        if (vertical != prevVert) {
+          post('drive', vertical);
+          prevVert = vertical
+        } else if (horizontal != prevHoriz) {
+          post('turn', horizontal);
+          prevHoriz = horizontal;
+        }
+      }
+
+      document.addEventListener('keydown', function(e) {
+        switch (e.key) {
+          case 'w':
+          case 'ArrowUp':
+            up = 1;
+            break;
+          case 's':
+          case 'ArrowDown':
+            down = 1;
+            break;
+          case 'd':
+          case 'ArrowRight':
+            right = 1;
+            break;
+          case 'a':
+          case 'ArrowLeft':
+            left = 1;
+            break;
+          default:
+            return;
+        }
+
+        handleInput(); 
+      });
+
+      document.addEventListener('keyup', function(e) {
+        switch (e.key) {
+          case 'w':
+          case 'ArrowUp':
+            up = 0;
+            break;
+          case 's':
+          case 'ArrowDown':
+            down = 0;
+            break;
+          case 'd':
+          case 'ArrowRight':
+            right = 0;
+            break;
+          case 'a':
+          case 'ArrowLeft':
+            left = 0;
+            break;
+          default:
+            return;
+        }
+
+        handleInput();
+      });
+    </script>
+  </body>
+</html>
