@@ -15,23 +15,17 @@
       var left = 0;
       var right = 0;
 
-      function post(route, value) {
+      function post(route, x, y) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/' + route, true);
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.send('value=' + value);
+        xhr.send('x=' + x + '&y=' + y);
       }
 
       function handleInput() {
         var horizontal = right - left;
         var vertical = up - down;
-        if (vertical != prevVert) {
-          post('drive', vertical);
-          prevVert = vertical
-        } else if (horizontal != prevHoriz) {
-          post('turn', horizontal);
-          prevHoriz = horizontal;
-        }
+        post('drive', vertical, horizontal);
       }
 
       document.addEventListener('keydown', function(e) {
