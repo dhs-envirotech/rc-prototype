@@ -25,6 +25,13 @@
       function handleInput() {
         var horizontal = right - left;
         var vertical = up - down;
+
+	if (prevHoriz == horizontal && prevVert == vertical) {
+	    return;
+        }
+	
+	prevHoriz = horizontal;
+	prevVert = vertical;
         post('drive', vertical, horizontal);
       }
 

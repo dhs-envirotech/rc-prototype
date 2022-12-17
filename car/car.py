@@ -10,7 +10,6 @@ from flask import Flask, request, render_template, Response
 # from flask_assets import Bundle, Environment
 import camera
 
-# video_camera = Camera() # creates a camera object
 video_camera = camera.Camera() # creates a camera object
 
 # define the ports
