@@ -5,6 +5,8 @@ import math
 width = 1000
 height = 500
 
+PERSON_SIZE_MIN = 100000
+
 cap = cv2.VideoCapture(0)
 cap.set(3, width)  # width
 cap.set(4, height)  # height
@@ -101,14 +103,15 @@ while True:
 
                 approach_direction = ""
                 rounded_area = round(area, -4)
-                if area < 50000:
+                if area < PERSON_SIZE_MIN:
                     approach_direction = "closer"
-                elif area > 50000:
+                elif area > PERSON_SIZE_MIN:
                     approach_direction = "farther"
                 else:
                     approach_direction = "X"
 
-                speed = (rounded_area-50000)/1000
+                # Speed is proprotional to the distance from the person
+                speed = round(((area-PERSON_SIZE_MIN)/10000), 0)
 
                 cv2.putText(img, f"Rover Approach: Move {approach_direction} @ {speed}", [50, 100], font, 1, color, thickness)
             else:
