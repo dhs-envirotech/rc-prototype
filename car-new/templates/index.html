@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC Car</title>
+    <script src="/static/socket.io.min.js"></script>
+</head>
+
+<body>
+    <p>
+        <b>Socket ID: </b><span id="id"></span>
+        <br>
+        <b>Connected: </b><span id="connected"></span>
+    </p>
+    <p>Use WASD to control the car</p>
+    <!-- <button id="forward">Forward</button>
+    <button id="backward">Backward</button>
+    <button id="left">Left</button>
+    <button id="right">Right</button>
+    <button id="stop">Stop</button> -->
+    <script>
+        // const buttons = document.querySelectorAll('button');
+        // for (const button of buttons) {
+        //     button.addEventListener('click', event => {
+        //         event.preventDefault();
+
+        //         socket.emit('drive', { data: button.id })
+
+        //         // fetch('/drive/' + button.id, {
+        //         //     method: 'POST'
+        //         // });
+        //     })
+        // }
+
+        // WebSocket (comms)
+        const socket = io();
+        socket.on('connect', () => {
+            document.getElementById('id').innerText = socket.id;
+        });
+
+        const connected = document.getElementById('connected');
+        setInterval(() => {
+            connected.innerText = socket.connected;
+        }, 1000);
+
+        // Keyboard
+        const reference = {
+            'Space': 'stop',
+            'ArrowUp': 'forward',
+            'ArrowDown': 'backward',
+            'ArrowLeft': 'left',
+            'ArrowRight': 'right',
+        };
+
+        // Not sure if order is maintained so didn't use Object.keys()
+        const priorityOrder = ['Space', 'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
+
+        let currentlyPressedKeycodes = {};
+
+        document.addEventListener('keydown', event => {
+            currentlyPressedKeycodes[event.code] = true;
+
+            const command = reference[event.code];
+            if (!command) return;
+
+            const priorityCommand = priorityOrder.find(item => currentlyPressedKeycodes[item]);
+
+            socket.emit('drive', reference[priorityCommand])
+        });
+
+        document.addEventListener('keyup', event => {
+            currentlyPressedKeycodes[event.code] = false;
+
+            const command = reference[event.code];
+            if (!command) return;
+
+            let priorityCommand = priorityOrder.find(item => currentlyPressedKeycodes[item]);
+
+            if (!priorityCommand) {
+                priorityCommand = 'Space'
+            }
+
+            socket.emit('drive', reference[priorityCommand]);
+        })
+    </script>
+</body>
+
+</html>
