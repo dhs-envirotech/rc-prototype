@@ -4,8 +4,10 @@ Controls an RC Car
 Original by Jacob Sommer 2020-01-20
 '''
 import RPi.GPIO as GPIO
+import cv2
 
 import atexit
+import threading
 
 from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
@@ -16,17 +18,10 @@ BackRightPins = [6, 13]
 FrontRightPins = [26, 19]
 BackLeftPins = [16, 12]
 FrontLeftPins = [20, 21]
-# BR1 = 6
-# BR2 = 13
-# FR1 = 26
-# FR2 = 19
-# BL1 = 16
-# BL2 = 12
-# FL1 = 20
-# FL2 = 21
 
 class Wheel:
     def __init__(self, pins):
+        # Not ideal to setup here...
         GPIO.setup(pins[0], GPIO.OUT)
         GPIO.setup(pins[1], GPIO.OUT)
         self.pin1 = pins[0]
@@ -52,6 +47,27 @@ FrontLeftWheel = Wheel(FrontLeftPins)
 
 wheels = [BackRightWheel, FrontRightWheel, BackLeftWheel, FrontLeftWheel]
 
+# Camera
+class Camera():
+    camera = None
+
+    def make_stream(self):
+        if self.camera is None:
+            self.camera = cv2.VideoCapture(0)
+
+        while True:
+            success, frame = self.camera.read()
+            if not success:
+                break
+
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    
+    def close(self):
+        self.camera.release()
+
 # Controller
 app = Flask(__name__, static_folder="static")
 socketio = SocketIO(app)
@@ -59,6 +75,11 @@ socketio = SocketIO(app)
 @app.route('/')
 def index():
     return render_template('index.html')
+
+camera = Camera()
+@app.route('/video')
+def video():
+    return Response(camera.make_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @socketio.on('drive')
 def drive(action):
@@ -84,41 +105,19 @@ def drive(action):
         for wheel in wheels:
             wheel.stop()
     else:
+        for wheel in wheels:
+            wheel.stop()
         return 'Invalid action', 400
-
-# @app.route('/drive/<path:action>', methods=['POST'])
-# def drive_http(action):
-#     if action == 'forward':
-#         for wheel in wheels:
-#             wheel.forward()
-#     elif action == 'backward':
-#         for wheel in wheels:
-#             wheel.backward()
-#     elif action == 'left':
-#         BackLeftWheel.backward()
-#         FrontLeftWheel.backward()
-#         BackRightWheel.forward()
-#         FrontRightWheel.forward()
-#     elif action == 'right':
-#         BackRightWheel.backward()
-#         FrontRightWheel.backward()
-#         BackLeftWheel.forward()
-#         FrontLeftWheel.forward()
-#     elif action == 'stop':
-#         for wheel in wheels:
-#             wheel.stop()
-#     else:
-#         return 'Invalid action', 400
-    
-#     return ''
 
 drive('stop')
 
 # app.run(debug=True, host='0.0.0.0')
+threading.Thread(target=video).start()
 socketio.run(app, host='0.0.0.0')
 
 @atexit.register
 def cleanup():
     drive('stop')
     GPIO.cleanup()
+    camera.close()
     print('Clean exit')
